@@ -53,6 +53,11 @@ else
 	echo "WARNING: lfs user already present."
 fi
 
+if ! [[ $(whoami) == "lfs" ]]; then
+	echo "ERROR: Please run this script as the lfs user!"
+	exit
+fi
+
 # Mount lfs partitions
 
 LFS=/mnt/lfs
@@ -68,16 +73,18 @@ echo "Mounted "$HOME_PART" to "$LFS"/boot/efi"
 sudo mkdir -v $LFS/opt
 sudo mount /dev/"$OPT_PART" $LFS/opt
 echo "Mounted "$OPT_PART" to "$LFS"/opt"
-sudo mkdir -v $LFS/lib
-sudo mkdir -v $LFS/var
-sudo mkdir -v $LFS/etc
-sudo mkdir -v $LFS/bin
-sudo mkdir -v $LFS/sbin
-sudo mkdir -v $LFS/tools
-sudo mkdir -v $LFS/usr
-sudo mkdir -v $LFS/src
+sudo mkdir -pv $LFS/{etc,var} $LFS/usr/{bin,lib,sbin}
+sudo mkdir -v $LFS/{tools,src}
 
-sudo chown -v lfs $LFS/{usr{,/*},lib,src,opt,home,var,etc,bin,sbin,tools}
+for i in bin lib sbin; do
+  sudo ln -sv usr/$i $LFS/$i
+done
+
+set +o posix
+
+case $(uname -m) in
+  x86_64) sudo mkdir -pv $LFS/lib64 ;;
+esac
+
+sudo chown -v lfs $LFS/{usr{,/*},lib,src,boot,opt,home,var,etc,bin,sbin,tools}
 sudo chown -v lfs $LFS/lib64
-
-
